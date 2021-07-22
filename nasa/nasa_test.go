@@ -1,10 +1,12 @@
 package nasa
 
 import (
-	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
+/*
 func TestUnmarshall(t *testing.T) {
 	s := "{" +
 		"\"copyright\":\"CHART32 Team\"," +
@@ -17,24 +19,46 @@ func TestUnmarshall(t *testing.T) {
 		"\"url\":\"https://apod.nasa.gov/apod/image/2107/NGC7814withSN2021rhuChart32_1024.jpg\"" +
 		"}"
 
-	var context = &NasaContext{}
+	var context = &Client{}
 	info, err := context.readDataInfo([]byte(s))
 	if err != nil {
 		t.Fatalf("Cannot parse")
 	}
 
-	if info.Url == "" {
+	if info.Url != "https://apod.nasa.gov/apod/image/2107/NGC7814withSN2021rhuChart32_1024.jpg" {
 		t.Fatalf("Cannot read")
 	}
 	fmt.Printf("%s\n", info.Url)
 }
+*/
 
-func TestGetImage(t *testing.T) {
-	var context = &NasaContext{}
-	file, err := context.getImage("https://apod.nasa.gov/apod/image/2107/NGC7814withSN2021rhuChart32_1024.jpg")
+func TestGet(t *testing.T) {
+	addr, teardown := setupSrv(t)
+	defer teardown()
+
+	file, err := get(addr + "/apod/image/2107/NGC7814withSN2021rhuChart32_1024.jpg")
 	if err != nil {
-		t.Fatalf("Cannot parse")
+		t.Errorf("failed to get stuff")
+		t.FailNow()
 	}
 
-	fmt.Printf(string(file))
+	exp := "super image"
+	if string(file) != exp {
+		t.Errorf("expected %s but got %s", exp, string(file))
+	}
+}
+
+func setupSrv(t *testing.T) (addr string, teardown func()) {
+	b := []byte("super image")
+	mux := http.NewServeMux()
+	mux.HandleFunc("/apod/image/2107/NGC7814withSN2021rhuChart32_1024.jpg", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "image/jpeg")
+		if _, err := w.Write(b); err != nil {
+			t.Errorf("failed to write response")
+			t.FailNow()
+		}
+	})
+
+	srv := httptest.NewServer(mux)
+	return srv.URL, func() { srv.Close() }
 }

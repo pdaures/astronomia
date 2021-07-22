@@ -3,17 +3,19 @@ package main
 import (
 	"apod/nasa"
 	"fmt"
-	http "net/http"
+	"net/http"
 	"os"
 )
 
 func main() {
 
-	context := &nasa.NasaContext{ApiKey: os.Args[1]}
+	apiKey := os.Args[1]
+	//context := &nasa.Client{ApiKey: os.Args[1]}
 
-	fmt.Printf("context start with APIKEY %s\n", context.ApiKey)
-	http.HandleFunc("/apod", context.GetData)
-	http.ListenAndServe(":8081", nil)
+	fmt.Printf("context start with APIKEY %s\n", apiKey)
+	http.HandleFunc("/apod", nasa.Handler(apiKey))
+	if err := http.ListenAndServe(":8081", nil); err != http.ErrServerClosed {
+		panic(err)
+	}
 	fmt.Printf("server stop")
-
 }

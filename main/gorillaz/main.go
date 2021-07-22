@@ -2,17 +2,16 @@ package main
 
 import (
 	"apod/nasa"
-	gorrilaz "github.com/skysoft-atm/gorillaz"
-	http "net/http"
 	"os"
+
+	gorrilaz "github.com/skysoft-atm/gorillaz"
 )
 
 func main() {
 
-	context := &nasa.NasaContext{ApiKey: os.Args[1]}
-
 	server := gorrilaz.New()
-	server.Router.PathPrefix("/apod").Handler(http.HandlerFunc(context.GetData))
+
+	server.Router.HandleFunc("/apod", nasa.CacheHandler(&nasa.Store{Path: "./"}, nasa.Handler(os.Args[1])))
 
 	<-server.Run()
 	server.SetReady(true)
