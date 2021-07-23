@@ -82,13 +82,13 @@ func CacheHandler(store *Store, handler func(http.ResponseWriter, *http.Request)
 }
 
 type Store struct {
-	sync.Mutex
+	sync.RWMutex
 	Path string
 }
 
 func (s *Store) Get(key string) (b []byte, found bool, err error) {
-	s.Lock()
-	defer s.Unlock()
+	s.RLock()
+	defer s.RUnlock()
 
 	path := filepath.Join(s.Path, key)
 	b, err = os.ReadFile(path)
